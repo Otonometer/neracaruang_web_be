@@ -1,0 +1,22 @@
+@extends('layouts.app')
+
+@section('contents')
+    <div class="content">
+        <div class="container">
+            @include('dashforge-templates::common.errors')
+
+            <h4 id="section1" class="mg-b-10">$MODEL_NAME_HUMAN$</h4>
+
+            <p class="mg-b-30">Please, fill all required fields before click save button.</p>
+
+            <div style="margin-right: -15px;margin-left: -15px;">
+                <div data-label="Edit" class="df-example demo-forms services-forms">
+                    {!! Form::model($$MODEL_NAME_CAMEL$, ['route' => ['$ROUTE_NAMED_PREFIX$$MODEL_NAME_PLURAL_CAMEL$.update', $$MODEL_NAME_CAMEL$->$PRIMARY_KEY_NAME$], 'method' => 'patch']) !!}
+                        @include('$VIEW_PREFIX$$MODEL_NAME_PLURAL_SNAKE$.fields')
+                    {!! Form::close() !!}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.content -->
+@endsection

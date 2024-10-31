@@ -1,0 +1,32 @@
+{
+    "name": "dandisy/dashforge-templates",
+    "description": "Dashforge templates for Webcore",
+    "keywords": [
+        "webcore",
+        "laravel",
+        "generator",
+        "dashforge",
+        "templates",
+        "bootstrap"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dandi Setiyawan",
+            "email": "dandi@redbuzz.co.id"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Webcore\\DashforgeTemplates\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "\\Webcore\\DashforgeTemplates\\DashforgeTemplatesServiceProvider"
+            ]
+        }
+    }
+}

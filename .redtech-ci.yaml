@@ -1,0 +1,55 @@
+variables:
+  IP_PRODUCTION: 103.175.217.110
+
+before_script:
+  - echo fs.inotify.max_user_watches=524288 | tee -a /etc/sysctl.conf && sysctl -p
+
+stages:
+  - push_tag
+  - staging
+
+Push tag:
+  stage: push_tag
+  image: docker:20.10.7-dind
+  variables:
+    USER: neracaruang-api
+    PATH_SOURCE: /home/neracaruang-api/htdocs/neraca-ruang-be
+  before_script:
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
+    - eval $(ssh-agent -s)
+    - echo "$NERACA_BE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+   - ssh $USER@$IP_PRODUCTION "echo \"Update to version $CI_COMMIT_REF_NAME\""
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && git checkout main && git branch -d latest || true && git pull && git fetch --tags && git checkout $CI_COMMIT_REF_NAME -b latest || true && git --no-pager log --oneline -n 10"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && cp -f .env.production .env"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && mkdir -p storage/{app/public,framework/{cache/data,sessions,testing,views},logs} || true && composer install"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && php artisan optimize:clear || true && php artisan storage:link || true"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && composer dumpautoload"
+  only:
+    - tags
+
+Staging:
+  stage: staging
+  image: docker:20.10.7-dind
+  variables:
+    USER: neracaruang-api
+    PATH_SOURCE: /home/neracaruang-api/htdocs/staging/neraca-ruang-be
+  before_script:
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
+    - eval $(ssh-agent -s)
+    - echo "$NERACA_BE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+   - ssh $USER@$IP_PRODUCTION "echo \"Update to version $CI_COMMIT_REF_NAME\""
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && git checkout staging && git pull && git --no-pager log --oneline -n 10"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && cp -f .env.neraca.staging .env"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && mkdir -p storage/{app/public,framework/{cache/data,sessions,testing,views},logs} || true && composer install"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && php artisan optimize:clear || true && php artisan storage:link || true"
+   - ssh $USER@$IP_PRODUCTION "cd $PATH_SOURCE && composer dumpautoload"
+  only:
+    - staging
+
+

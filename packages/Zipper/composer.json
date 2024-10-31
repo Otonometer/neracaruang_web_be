@@ -1,0 +1,41 @@
+{
+    "name": "dandisy/zipper",
+    "type": "library",
+    "description": "This is a little neat helper for the ZipArchive methods with handy functions",
+    "keywords": ["laravel", "ZIP", "Archive"],
+    "homepage": "http://github.com/dandisy/Zipper",
+    "license": "Apache2",
+    "authors": [
+        {
+            "name": "Nils Plaschke",
+            "email": "github@nilsplaschke.de",
+            "homepage": "http://nilsplaschke.de",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Chumper\\Zipper\\": "src/Chumper/Zipper"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Chumper\\Zipper\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Chumper\\Zipper\\ZipperServiceProvider"
+            ],
+            "aliases": {
+                "Zipper": "Chumper\\Zipper\\Zipper"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,25 @@
+@extends('layouts.app')
+
+@section('contents')
+    {{--<section class="content-header">
+        <h1>
+            $MODEL_NAME_HUMAN$
+        </h1>--}}
+        
+        {{--@include('$VIEW_PREFIX$$MODEL_NAME_PLURAL_SNAKE$.version')--}}
+    {{--</section>--}}
+    <div class="content">
+        <h4 class="mg-b-30">$MODEL_NAME_HUMAN$</h4>
+
+        <div class="box box-primary">
+            <div class="box-body">
+                @include('$VIEW_PREFIX$$MODEL_NAME_PLURAL_SNAKE$.show_fields')                
+
+                <div class="clearfix"></div>
+                <hr>
+
+                <a href="{!! route('$ROUTE_NAMED_PREFIX$$MODEL_NAME_PLURAL_CAMEL$.index') !!}" class="btn btn-light">Back</a>
+            </div>
+        </div>
+    </div>
+@endsection

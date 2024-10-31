@@ -1,0 +1,4 @@
+    <div class="custom-control custom-radio">
+        {!! Form::radio('$FIELD_NAME$', "$VALUE$", null, ['class' => 'custom-control-input', 'id' => '$FIELD_NAME$']) !!}
+        <label class="custom-control-label" for="$FIELD_NAME$">{!! $LABEL$ !!}</label>
+    </div>

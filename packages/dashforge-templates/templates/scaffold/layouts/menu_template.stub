@@ -1,0 +1,5 @@
+@can('$MODEL_NAME_CAMEL$-show')
+<li class="{{ Request::is('$MODEL_NAME_PLURAL_CAMEL$*') ? 'active' : '' }} nav-item">
+    <a class="nav-link" href="{!! route('$ROUTE_NAMED_PREFIX$$MODEL_NAME_PLURAL_CAMEL$.index') !!}"><i data-feather="edit-3"></i><span>$MODEL_NAME_PLURAL_HUMAN$</span></a>
+</li>
+@endcan

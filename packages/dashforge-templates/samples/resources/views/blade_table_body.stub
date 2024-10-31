@@ -1,0 +1,1252 @@
+@section('css')
+    <link rel="stylesheet" type="text/css" href="{{ asset('vendor/dxDataGrid/css/dx.common.css') }}" />
+    <link rel="dx-theme" data-theme="generic.light" href="{{ asset('vendor/dxDataGrid/css/dx.light.css') }}" />
+    <style>
+        .dx-datagrid .dx-data-row > td.bullet {
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .dx-datagrid-content .dx-datagrid-table .dx-row .dx-command-edit {
+            width: auto;
+            min-width: 140px;
+        }
+    </style>
+@endsection
+
+<div class="dx-viewport">
+    <div class="demo-container">
+        <div id="gridContainer"></div>
+    </div>
+</div>
+
+<!--{{--<table class="table table-responsive" id="$MODEL_NAME_PLURAL_CAMEL$-table">
+    <thead>
+        <tr>
+            $FIELD_HEADERS$
+            <th colspan="3">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach($$MODEL_NAME_PLURAL_CAMEL$ as $$MODEL_NAME_CAMEL$)
+        <tr>
+            $FIELD_BODY$
+            <td>
+                {!! Form::open(['route' => ['$ROUTE_NAMED_PREFIX$$MODEL_NAME_PLURAL_CAMEL$.destroy', $$MODEL_NAME_CAMEL$->$PRIMARY_KEY_NAME$], 'method' => 'delete']) !!}
+                <div class='btn-group'>
+                    <a href="{!! route('$ROUTE_NAMED_PREFIX$$MODEL_NAME_PLURAL_CAMEL$.show', [$$MODEL_NAME_CAMEL$->$PRIMARY_KEY_NAME$]) !!}" class='btn btn-outline-secondary btn-xs btn-icon'><i class="fa fa-eye"></i></a>
+                    <a href="{!! route('$ROUTE_NAMED_PREFIX$$MODEL_NAME_PLURAL_CAMEL$.edit', [$$MODEL_NAME_CAMEL$->$PRIMARY_KEY_NAME$]) !!}" class='btn btn-outline-primary btn-xs btn-icon'><i class="fa fa-edit"></i></a>
+                    {!! Form::button('<i class="fa fa-trash"></i>', ['type' => 'submit', 'class' => 'btn btn-outline-danger btn-xs btn-icon', 'onclick' => "return confirm('Are you sure?')"]) !!}
+                </div>
+                {!! Form::close() !!}
+            </td>
+        </tr>
+    @endforeach
+    </tbody>
+</table>--}}-->
+
+@section('scripts')
+    <script src="{{ asset('vendor/dxDataGrid/js/jszip/3.1.5/jszip.min.js') }}"></script>
+    <script src="{{ asset('vendor/dxDataGrid/js/20.1.6/dx.all.js') }}"></script>
+    <script src="{{ asset('vendor/dxDataGrid/js/babel-polyfill/7.4.0/polyfill.min.js') }}"></script>
+    <script src="{{ asset('vendor/dxDataGrid/js/exceljs/3.3.1/exceljs.min.js') }}"></script>
+    <script src="{{ asset('vendor/dxDataGrid/js/FileSaver.js/1.3.8/FileSaver.min.js') }}"></script>
+    
+    <script>
+        function addImage(url, workbook, worksheet, excelCell, resolve) {
+            var xhr = new XMLHttpRequest()
+            xhr.open('GET', url)
+            xhr.responseType = 'blob'
+            xhr.onload = function () {
+                var reader = new FileReader();
+                reader.readAsDataURL(xhr.response);
+                reader.onloadend = function() {
+                    var base64data = reader.result;                
+                    const image = workbook.addImage({
+                        base64: base64data,
+                        extension: 'png',
+                    });
+
+                    worksheet.getRow(excelCell.row).height = 75;
+                    worksheet.addImage(image, {
+                        tl: { col: excelCell.col - 1, row: excelCell.row - 1 },
+                        br: { col: excelCell.col, row: excelCell.row }
+                    });
+
+                    resolve();
+                }
+            }
+            xhr.onerror = function () {
+                console.error('could not add image to excel cell')
+            };
+            xhr.send();
+        }
+
+        var doDeselection;
+        function logEvent(eventName) {
+            var logList = $("#events ul"),
+                newItem = $("<li>", { text: eventName });
+
+            logList.prepend(newItem);
+        }
+
+        $("#gridContainer").dxDataGrid({
+            dataSource: @json($$MODEL_NAME_PLURAL_CAMEL$),
+            columnAutoWidth: true,
+            allowColumnResizing: true,
+            columnResizingMode: 'widget', // or 'nextColumn'
+            // rowAlternationEnabled: true,
+            allowColumnReordering: true,
+            columnChooser: {
+                enabled: true,
+                mode: "dragAndDrop" // or "select"
+            },
+            hoverStateEnabled: true, 
+            // showBorders: true,
+            // selection: {
+            //     mode: 'multiple'
+            // },
+            // // {{--@role('superadministrator')--}}
+            // selection: {
+            //     mode: "multiple",
+            //     // allowSelectAll : false,
+            //     selectAllMode: 'page',
+            //     showCheckBoxesMode : "always"
+            // },
+            // // {{--@endrole--}}
+            export: {
+                enabled: true,
+                fileName: '$MODEL_NAME_PLURAL_CAMEL$',
+                // allowExportSelectedData: true,
+            },
+            grouping: {
+                autoExpandAll: false,
+                contextMenuEnabled: true
+            },
+            groupPanel: {
+                visible: true
+            },       
+            searchPanel: {
+                visible: true
+            },   
+            filterRow: {
+                visible: true
+            },
+            headerFilter: {
+                visible: true
+            },
+            columnFixing: {
+                enabled: true
+            },
+            // height: 420,            
+            paging: {
+                pageSize: 10
+            },
+            pager: {
+                showPageSizeSelector: true,
+                allowedPageSizes: [10, 50, 100],
+                showInfo: true
+            },
+            keyExpr: "id",
+            columns: [
+                {  
+                    caption: '#',
+                    // allowEditing: false,
+                    // allowSorting: false,
+                    cellTemplate: function(cellElement, cellInfo) {  
+                        cellElement.text(cellInfo.row.rowIndex + 1);
+                        // cellElement.html('<span>'+(parseInt(cellInfo.rowIndex, 10)+1)+'</span>');
+                    }
+                },
+                {
+                    dataField: 'id',
+                    visible: false, 
+                    // sortIndex: 0,
+                    // sortOrder: "desc"
+                },
+                // "name",
+                // "description",
+                "created_by",
+                "created_at",
+                "updated_by",
+                "updated_at"
+            ],
+            editing: {
+                mode: "row",
+                allowDeleting: function(e) {
+                    return true;
+                },
+            },
+            onExporting: e => {
+                var workbook = new ExcelJS.Workbook();    
+                var worksheet = workbook.addWorksheet('Main sheet');
+                var PromiseArray = [];
+                
+                DevExpress.excelExporter.exportDataGrid({
+                    component: e.component,
+                    worksheet: worksheet,
+                    autoFilterEnabled: true,
+                    customizeCell: (options) => {
+                        var { excelCell, gridCell } = options;
+                        if(gridCell.rowType === "data") {
+                            if(gridCell.column.dataField === "image") {
+                                excelCell.value = undefined;
+                                PromiseArray.push(
+                                    new Promise((resolve, reject) => {
+                                        addImage(gridCell.value, workbook, worksheet, excelCell, resolve); 
+                                    })
+                                );
+                            }
+                        }
+
+                    }
+                }).then(function() {
+                    Promise.all(PromiseArray).then(() => {
+                        workbook.xlsx.writeBuffer().then(function (buffer) {
+                            saveAs(new Blob([buffer], { type: "application/octet-stream" }), "$MODEL_NAME_PLURAL_CAMEL$.xlsx");
+                        });
+                    });
+                });
+                e.cancel = true;
+            },
+            onCellPrepared: function (e) {
+                if (e.rowType === "data" && e.column.command === "edit") {
+                    e.cellElement.prepend('&nbsp;');
+                    $('<a/>').addClass('dx-link')
+                        .text('Edit')
+                        .on('dxclick', function () {
+                            window.location = '{{url("$MODEL_NAME_PLURAL_CAMEL$")}}/'+e.row.data.id+'/edit'
+                        })
+                        .prependTo(e.cellElement);
+                }
+            },
+            onRowRemoved: function(e) {
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                $.ajax({
+                    url: '{{ url()->current() }}/'+JSON.stringify(e.data.id),
+                    type: 'delete'
+                }).success(function(res) {
+                    // location = '{{ url()->current() }}';
+                }).error(function(res) {
+                    location = '{{ url()->current() }}';
+                });
+                
+                logEvent("RowRemoved");
+            },
+            // columns: [
+            //     {  
+            //         caption: '#',
+            //         // allowEditing: false,
+            //         // allowSorting: false,
+            //         cellTemplate: function(cellElement, cellInfo) {  
+            //             cellElement.text(cellInfo.row.rowIndex + 1);
+            //             // cellElement.html('<span>'+(parseInt(cellInfo.rowIndex, 10)+1)+'</span>');
+            //         }
+            //     },
+            //     {
+            //         dataField: 'id',
+            //         visible: false, 
+            //         // sortIndex: 0,
+            //         // sortOrder: "desc"
+            //     },
+            //     // "name",
+            //     // "description",
+            //     "created_by",
+            //     "created_at",
+            //     "updated_by",
+            //     "updated_at",
+            //     // {
+            //     //     dataField: 'date',
+            //     //     dataType: 'date',  
+            //     //     format: 'dd/MM/yyyy'
+            //     // },
+            //     // {
+            //     //     dataField: "code",
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         var order = cellInfo.data.order_dbexisting_id;
+            //     //         if(cellInfo.data.is_draft == 'Yes') {
+            //     //             order = 'draft';
+            //     //         }
+            //     //         var url = '{{url("salesOrderHeaders")}}/'+cellInfo.data.id+'/edit'+'?order='+order;
+            //     //         cellElement.html('<a class="dx-link" href="'+url+'">'+cellInfo.data.code+'</a>');
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "quotation_header",
+            //     //     caption: "Quotation Code",
+            //     //     calculateCellValue: function(data) {                        
+            //     //         if(this.defaultCalculateCellValue(data)) {
+            //     //             return this.defaultCalculateCellValue(data).code;
+            //     //         }
+            //     //     }
+            //     // },
+            //     // {{--@if(Request::is('quotationHeaders/create*'))
+            //     // {
+            //     //     dataField: "type1",
+            //     //     allowEditing: false,
+            //     //     allowSorting: true
+            //     // },
+            //     // @else
+            //     // {
+            //     //     dataField: "type2",
+            //     //     allowEditing: false,
+            //     //     allowSorting: true
+            //     // },
+            //     // @endif--}}
+            //     // {
+            //     //     dataField: "quantity",
+            //     //     caption: 'Qty',
+            //     //     allowUpdating: true,
+            //     //     allowSorting: false,
+            //     //     cssClass: 'editable-cell qty',
+            //     //     // calculateCellValue: function(data) {
+            //     //     //     return this.defaultCalculateCellValue(data) ? this.defaultCalculateCellValue(data) : '. . . . . .';
+            //     //     // }
+            //     //     // validationRules: [{ 
+            //     //     //     type: "stringLength", 
+            //     //     //     min: 1, 
+            //     //     //     message: "Quantity harus diisi" 
+            //     //     // }]
+            //     // },
+            //     // {
+            //     //     dataField: "status",
+            //     //     caption: "Order Status",
+            //     //     calculateCellValue: function(data) {
+            //     //         if(data.is_draft == 'Yes') {
+            //     //             return 'Draft';
+            //     //         } else {
+            //     //             if(this.defaultCalculateCellValue(data)) {
+            //     //                 return this.defaultCalculateCellValue(data).title;
+            //     //             }
+            //     //         }
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "expected_delivery_datetime",
+            //     //     caption: "Expected Delivery Datetime",
+            //     //     dataType: "datetime",
+            //     // },
+            //     // {
+            //     //     dataField: "image",
+            //     //     allowFiltering: false,
+            //     //     allowSorting: false,
+            //     //     cellTemplate: function (container, options) {
+            //     //         // $("<div>")
+            //     //         //     .append($("<img>", { "src": options.value }))
+            //     //         //     .appendTo(container);
+            //     //         $(container).append('<div>').append('<img height="30" src="'+options.value+'">');
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "image",                    
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         cellElement.html('<img width="70" src="'+cellInfo.data.image+'">');
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "file",
+            //     //     caption: 'Quotation File',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         var url = '{{url("quotationHeaders")}}/'+cellInfo.data.id+'/edit';
+            //     //         if(mb) {
+            //     //             url += '?mb='+mb;
+            //     //             url += '&type=upload-quo';
+            //     //         } else {
+            //     //             url += '?type=upload-quo';
+            //     //         }
+            //     //         // if(cellInfo.data.quotation_detail.length) {
+            //     //         //     // cellElement.html('<a class="dx-link" href="'+url+'">View details</a>');
+            //     //         //     cellElement.html('Details (<a class="dx-link" href="'+url+'?type=detail">View</a>)');
+            //     //         // } else {
+            //     //             if(cellInfo.data.file) {
+            //     //                 cellElement.html('Uploded (<a class="dx-link" target="_blank" href="{{str_replace("assets/","",env("BASE_URL_MB_ASSETS"))}}'+cellInfo.data.file+'">View</a> / <a class="dx-link" href="'+url+'">Change</a>)');
+            //     //             } else {
+            //     //                 // if(mb) {
+            //     //                 //     url += '&type=upload-quo';
+            //     //                 // } else {
+            //     //                 //     url += '?type=upload-quo';
+            //     //                 // }
+            //     //                 cellElement.html('<a class="dx-link" href="'+url+'">Click to upload file</a>');                            
+            //     //             }
+            //     //         // }
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: 'name',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         cellElement.html('<a class="dx-link" href="{{url("$MODEL_NAME_PLURAL_CAMEL$")}}/'+cellInfo.data.id+'/edit">'+cellInfo.data.name+'</a>');
+            //     //     }
+            //     //     // customizeText: function(data) {
+            //     //     //     // return $('<a/>').addClass('dx-link').text(data.value.name).on('dxclick', function () {
+            //     //     //     //     window.location = '{{url("$MODEL_NAME_PLURAL_CAMEL$")}}/'+data.value.id;
+            //     //     //     // });
+            //     //     // }
+            //     //     // calculateCellValue: function(data) {
+            //     //     //     // return this.defaultCalculateCellValue(data) ? 'Yes' : 'No';
+            //     //     // }
+            //     // },
+            //     // {
+            //     //     dataField: "value",
+            //     //     // format: '#,##0.##',
+            //     //     format: {
+            //     //         type: "fixedPoint",
+            //     //         precision: 0
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "category.category_name",
+            //     //     caption: 'Category',
+            //     //     calculateDisplayValue: "category.category_name"
+            //     // },
+            //     // {
+            //     //     dataField: "discount_amount",
+            //     //     caption: "Discount",
+            //     //     // alignment: 'right',
+            //     //     allowEditing: false,
+            //     //     allowSorting: false,
+            //     //     format: '#,##0.##',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         // var uPrice = cellInfo.data.unit_price;
+            //     //         // var uPrice = parseInt(cellInfo.data.product_price_mb);
+            //     //         var uPrice = parseInt(cellInfo.data.unit_price_mb);
+            //     //         var tax = cellInfo.data.tax_amount ? cellInfo.data.tax_amount : 0;
+            //     //         var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //     //         var uDPrice = parseInt(cellInfo.data.selling_price) ? parseInt(cellInfo.data.selling_price) : 0;                    
+            //     //         var uDPriceTaxed = tax ? uDPrice+(tax*uDPrice/100) : uDPrice;
+
+            //     //         // var dcountAmount = (cellInfo.data.quantity*uPriceTaxed)-(cellInfo.data.selling_price ? cellInfo.data.selling_price : (cellInfo.data.quantity*uPriceTaxed));
+            //     //         // var dcountAmount = uPriceTaxed-(cellInfo.data.selling_price ? cellInfo.data.selling_price : uPriceTaxed);
+            //     //         var dcountAmount = uPriceTaxed-uDPriceTaxed;                    
+
+            //     //         $('<span/>').addClass('')
+            //     //             .text(dcountAmount > 0 ? dcountAmount : 0)
+            //     //             .appendTo(cellElement);
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "margin_up_item",
+            //     //     // visible: false,
+            //     //     caption: "Margin",
+            //     //     allowUpdating: false,
+            //     //     allowSorting: false,
+            //     //     format: '#,##0.##',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         // var uPrice = cellInfo.data.unit_price;
+            //     //         // var uPrice = parseInt(cellInfo.data.product_price_mb);
+            //     //         var uPrice = parseInt(cellInfo.data.unit_price_mb);
+            //     //         var tax = cellInfo.data.tax_amount ? cellInfo.data.tax_amount : 0;
+            //     //         var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //     //         var uDPrice = parseInt(cellInfo.data.selling_price) ? parseInt(cellInfo.data.selling_price) : 0;
+            //     //         var uDPriceTaxed = tax ? uDPrice+(tax*uDPrice/100) : uDPrice;
+
+            //     //         // var mupItem = (cellInfo.data.selling_price ? cellInfo.data.selling_price : (cellInfo.data.quantity*uPriceTaxed))-(cellInfo.data.quantity*uPriceTaxed);
+            //     //         // var mupItem = (cellInfo.data.selling_price ? cellInfo.data.selling_price : uPriceTaxed)-uPriceTaxed;
+            //     //         var mupItem = uDPriceTaxed-uPriceTaxed;
+
+            //     //         $('<span/>').addClass('')
+            //     //             .text(mupItem > 0 ? mupItem : 0)
+            //     //             .appendTo(cellElement);
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "unit_note",
+            //     //     caption: "Remarks",
+            //     //     allowEditing: true,
+            //     //     // allowSorting: false,
+            //     //     cssClass: 'editable-cell'
+            //     //     // calculateCellValue: function(data) {
+            //     //     //     return this.defaultCalculateCellValue(data) ? this.defaultCalculateCellValue(data) : '. . . . . .';
+            //     //     // }
+            //     // },
+            //     // {{--@if(!Auth::user()->mitra_bisnis_id)
+            //     // {
+            //     //     dataField: "unit_price_mb",
+            //     //     caption: "Base Price",
+            //     //     allowEditing: false,
+            //     //     // allowSorting: false,
+            //     //     format: '#,##0.##'
+            //     // },
+            //     // {
+            //     //     dataField: "unit_price_mb",
+            //     //     caption: "Recommended Price",
+            //     //     allowEditing: false,
+            //     //     // allowSorting: false,
+            //     //     format: '#,##0.##',
+            //     //     calculateCellValue: function(data) {
+            //     //         return this.defaultCalculateCellValue(data) * ((100+{{$settings->where('key', 'recommended_price')->first()->value}})/100);
+            //     //     }
+            //     // },
+            //     // @endif--}}
+            //     // {
+            //     //     dataField: "product_price_mb",
+            //     //     allowEditing: true,
+            //     //     allowSorting: false
+            //     // },
+            //     // {
+            //     //     // dataField: "total_price",
+            //     //     caption: "Subtotal price mb",
+            //     //     // width: 100,
+            //     //     alignment: 'right',
+            //     //     allowEditing: false,
+            //     //     allowSorting: false,
+            //     //     format: '#,##0.##',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         // // var uPrice = cellInfo.data.unit_price;
+            //     //         // // var uPrice = parseInt(cellInfo.data.product_price_mb) ? parseInt(cellInfo.data.product_price_mb) : 0;
+            //     //         // var uPrice = parseInt(cellInfo.data.unit_price_mb) ? parseInt(cellInfo.data.unit_price_mb) : 0;                    
+            //     //         // var tax = parseInt(cellInfo.data.tax_amount) ? parseInt(cellInfo.data.tax_amount) : 0;
+            //     //         // var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //     //         // var h = (parseInt(cellInfo.data.quantity) ? parseInt(cellInfo.data.quantity) : 0)*uPriceTaxed;
+
+            //     //         // $('<span/>').addClass('')
+            //     //         //     .text(h != 0 ? h : null)
+            //     //         //     .appendTo(cellElement);
+
+            //     //         var uPrice = parseInt(cellInfo.data.unit_price_mb) ? parseInt(cellInfo.data.unit_price_mb) : 0;                    
+            //     //         // var tax = parseInt(cellInfo.data.tax_amount) ? parseInt(cellInfo.data.tax_amount) : 0;
+            //     //         // var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //     //         // var h = uPriceTaxed+cellInfo.data.margin_up_item;
+            //     //         var h = (parseInt(cellInfo.data.quantity) ? parseInt(cellInfo.data.quantity) : 0)*uPrice;
+
+            //     //         $('<span/>').addClass('')
+            //     //             .text(h != 0 ? h : null)
+            //     //             .appendTo(cellElement);
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "tax_amount",
+            //     //     caption: "PPN (%)",
+            //     //     allowUpdating: true,
+            //     //     allowSorting: false,
+            //     //     cssClass: 'editable-cell'
+            //     // },
+            //     // {
+            //     //     dataField: "discount_percent",
+            //     //     allowSorting: false
+            //     // },
+            //     // {
+            //     //     dataField: "discount_percent",
+            //     //     // width: 100,
+            //     //     // alignment: 'right',
+            //     //     allowEditing: true,
+            //     //     allowSorting: false,
+            //     //     // cellTemplate: function (cellElement, cellInfo) {
+            //     //     //     $('<span/>').addClass('')
+            //     //     //         .text((cellInfo.data.discount_amount*100)/cellInfo.data.total_price)
+            //     //     //         .appendTo(cellElement);
+            //     //     // }
+            //     // },
+            //     // {
+            //     //     dataField: "discount_amount",
+            //     //     allowSorting: false
+            //     // },
+            //     // {
+            //     //     dataField: "discount_amount",
+            //     //     // width: 100,
+            //     //     // alignment: 'right',
+            //     //     allowEditing: true,
+            //     //     allowSorting: false,
+            //     //     // cellTemplate: function (cellElement, cellInfo) {
+            //     //     //     $('<span/>').addClass('')
+            //     //     //         .text(cellInfo.data.discount_percent ? (cellInfo.data.discount_percent*cellInfo.data.total_price)/100 : null)
+            //     //     //         .appendTo(cellElement);
+            //     //     // }
+            //     // },
+            //     // {
+            //     //     dataField: "selling_price",
+            //     //     caption: "Deal Price",
+            //     //     // width: 100,
+            //     //     // alignment: 'right',
+            //     //     allowEditing: true,
+            //     //     // allowSorting: false,
+            //     //     format: '#,##0.##',
+            //     //     cssClass: 'editable-cell deal',
+            //     //     // calculateCellValue: function(data) {
+            //     //     //     return this.defaultCalculateCellValue(data) ? this.defaultCalculateCellValue(data) : '. . . . . .';
+            //     //     // }
+            //     //     // cellTemplate: function (cellElement, cellInfo) {
+            //     //     //     $('<span/>').addClass('')
+            //     //     //         .text(cellInfo.data.total_price-cellInfo.data.discount_amount)
+            //     //     //         .appendTo(cellElement);
+            //     //     // }
+            //     // },
+            //     // {
+            //     //     dataField: "total_price",
+            //     //     caption: "Subtotal price deal",
+            //     //     // width: 100,
+            //     //     alignment: 'right',
+            //     //     allowEditing: false,
+            //     //     allowSorting: false,
+            //     //     format: '#,##0.##',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         // // // var uPrice = cellInfo.data.unit_price;
+            //     //         // // // var uPrice = parseInt(cellInfo.data.product_price_mb) ? parseInt(cellInfo.data.product_price_mb) : 0;
+            //     //         // // var uPrice = parseInt(cellInfo.data.unit_price_mb) ? parseInt(cellInfo.data.unit_price_mb) : 0;                    
+            //     //         // // var tax = parseInt(cellInfo.data.tax_amount) ? parseInt(cellInfo.data.tax_amount) : 0;
+            //     //         // // var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //     //         // // var h = (parseInt(cellInfo.data.quantity) ? parseInt(cellInfo.data.quantity) : 0)*uPriceTaxed;
+
+            //     //         // // $('<span/>').addClass('')
+            //     //         // //     .text(h != 0 ? h : null)
+            //     //         // //     .appendTo(cellElement);
+
+            //     //         // var uPrice = parseInt(cellInfo.data.unit_price_mb) ? parseInt(cellInfo.data.unit_price_mb) : 0;                    
+            //     //         // var tax = parseInt(cellInfo.data.tax_amount) ? parseInt(cellInfo.data.tax_amount) : 0;
+            //     //         // var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //     //         // var h = uPriceTaxed+cellInfo.data.margin_up_item;
+
+            //     //         var uPrice = parseInt(cellInfo.data.selling_price) ? parseInt(cellInfo.data.selling_price) : 0;                    
+            //     //         var tax = parseInt(cellInfo.data.tax_amount) ? parseInt(cellInfo.data.tax_amount) : 0;
+            //     //         var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //     //         var h = uPriceTaxed;
+
+            //     //         $('<span/>').addClass('')
+            //     //             .text(h != 0 ? h : null)
+            //     //             .appendTo(cellElement);
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "sales_header_id",
+            //     //     visible: false,
+            //     //     // groupIndex: 0, 
+            //     //     // groupCellTemplate: function(cellElement, cellInfo) {
+            //     //     //     var data = cellInfo.data.collapsedItems || cellInfo.data.items;
+
+            //     //     //     console.log(data[0]);
+
+            //     //     //     // if(data[0].sales_order_header.quotation_header) {
+            //     //     //     //     var mb = data[0].sales_order_header.quotation_header.mitra_bisnis;
+            //     //     //     //     var mbName = null
+            //     //     //     //     if(mb) {
+            //     //     //     //         mbName = mb.name;
+            //     //     //     //     }
+            //     //     //     // }
+
+            //     //     //     cellElement.text(cellInfo.column.caption+': '+cellInfo.text);
+            //     //     //     // cellElement.text('Sales Order Id: '+cellInfo.text+' code: '+data[0].sales_order_header.code+' | '+'Mitra Bisnis: '+mbName);
+            //     //         
+            //     //     //     $('<a/>').addClass('dx-link').addClass('pull-right')
+            //     //     //         .text('Edit')
+            //     //     //         .on('dxclick', function () {
+            //     //     //             window.location = '{{url("salesOrderHeaders")}}/'+data[0].sales_header_id+'/edit'
+            //     //     //         })
+            //     //     //         .appendTo(cellElement);
+            //     //     //     // $('<a/>').addClass('pull-right')
+            //     //     //     //     .text('Checking...')
+            //     //     //     //     .appendTo(cellElement);
+            //     //     //     // $('<span/>').addClass('pull-left')
+            //     //     //     //     .text('test')
+            //     //     //     //     .appendTo(cellElement);
+            //     //     //     // }
+            //     //     // }
+            //     // },
+            //     // {
+            //     //     dataField: "sales_order_header",
+            //     //     caption: "Sales order code",
+            //     //     groupIndex: 1,
+            //     //     calculateCellValue: function(data) {
+            //     //         if(this.defaultCalculateCellValue(data)) {
+            //     //             return this.defaultCalculateCellValue(data).code;
+            //     //         }
+            //     //     },
+            //     //     groupCellTemplate: function(cellElement, cellInfo) {
+            //     //         var data = cellInfo.data.collapsedItems || cellInfo.data.items;
+
+            //     //         // console.log(data[0]);
+
+            //     //         // if(data[0].sales_order_header.quotation_header) {
+            //     //         //     var mb = data[0].sales_order_header.quotation_header.mitra_bisnis;
+            //     //         //     var mbName = null
+            //     //         //     if(mb) {
+            //     //         //         mbName = mb.name;
+            //     //         //     }
+            //     //         // }
+
+            //     //         cellElement.text(cellInfo.column.caption+': '+cellInfo.text);
+            //     //         // // cellElement.text('Sales Order Id: '+cellInfo.text+' code: '+data[0].sales_order_header.code+' | '+'Mitra Bisnis: '+mbName);
+            //     //         
+            //     //         $('<a/>').addClass('dx-link').addClass('pull-right')
+            //     //             .text('View')
+            //     //             .on('dxclick', function () {
+            //     //                 window.location = '{{url("salesOrderHeaders")}}/'+data[0].sales_header_id+'/edit?order='+data[0].sales_order_header.order_dbexisting_id
+            //     //             })
+            //     //             .appendTo(cellElement);
+            //     //         // $('<a/>').addClass('pull-right')
+            //     //         //     .text('Checking...')
+            //     //         //     .appendTo(cellElement);
+            //     //         // $('<span/>').addClass('pull-left')
+            //     //         //     .text('test')
+            //     //         //     .appendTo(cellElement);
+            //     //         // }
+            //     //     }
+            //     // },
+            //     // {
+            //     //     dataField: "sales_order_header",
+            //     //     caption: "Sales order date",
+            //     //     // groupIndex: 1,
+            //     //     dataType: "date",
+            //     //     // format: 'dd/MM/yyyy',
+            //     //     format: 'shortDate',
+            //     //     sortIndex: 0,
+            //     //     sortOrder: "desc",
+            //     //     calculateCellValue: function(data) {                        
+            //     //         if(this.defaultCalculateCellValue(data)) {
+            //     //             return this.defaultCalculateCellValue(data).created_at;
+            //     //             // return Globalize.format(this.defaultCalculateCellValue(data).created_at, "dd/MM/yyyy HH:mm:ss")
+            //     //         }
+            //     //     }
+            //     //     // customizeText: function (data) {  
+            //     //     //     return Globalize.format(data.value, "dd/MM/yyyy HH:mm:ss")  
+            //     //     // } 
+            //     // },
+            //     // {{--@role('superadministrator|administrator|maker')--}}
+            //     // {
+            //     //     width: 100,
+            //     //     alignment: 'center',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         $('<a/>').addClass('dx-link')
+            //     //             .text('Edit')
+            //     //             .on('dxclick', function () {
+            //     //                 window.location = '{{url("$MODEL_NAME_PLURAL_CAMEL$")}}/'+cellInfo.data.id+'/edit'
+            //     //             })
+            //     //             .appendTo(cellElement);
+            //     //         // $('<a/>').attr('data-key', cellInfo.data.id).dxButton({
+            //     //         //     text: "Edit",
+            //     //         //     onClick: function (e) {
+            //     //         //         window.location = '{{url("users")}}/'+e.element.attr('data-key')+'/edit'
+            //     //         //     }
+            //     //         // }).appendTo(cellElement);
+            //     //     }
+            //     // },
+            //     // {{--@endrole--}}
+            //     // {{--@role('superadministrator|checker')--}}
+            //     // {
+            //     //     width: 100,
+            //     //     alignment: 'center',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         $('<a/>').addClass('dx-link text-success')
+            //     //             .text('Approve')
+            //     //             .on('dxclick', function () {
+            //     //                 window.location = '{{url("$MODEL_NAME_PLURAL_CAMEL$")}}/'+cellInfo.data.id+'/approve'
+            //     //             })
+            //     //             .appendTo(cellElement);
+            //     //         // $('<a/>').attr('data-key', cellInfo.data.id).dxButton({
+            //     //         //     text: "Edit",
+            //     //         //     onClick: function (e) {
+            //     //         //         window.location = '{{url("users")}}/'+e.element.attr('data-key')+'/edit'
+            //     //         //     }
+            //     //         // }).appendTo(cellElement);
+            //     //     }
+            //     // },
+            //     // {
+            //     //     width: 100,
+            //     //     alignment: 'center',
+            //     //     cellTemplate: function (cellElement, cellInfo) {
+            //     //         $('<a/>').addClass('dx-link text-danger')
+            //     //             .text('Reject')
+            //     //             .on('dxclick', function () {
+            //     //                 window.location = '{{url("$MODEL_NAME_PLURAL_CAMEL$")}}/'+cellInfo.data.id+'/reject'
+            //     //             })
+            //     //             .appendTo(cellElement);
+            //     //         // $('<a/>').attr('data-key', cellInfo.data.id).dxButton({
+            //     //         //     text: "Edit",
+            //     //         //     onClick: function (e) {
+            //     //         //         window.location = '{{url("users")}}/'+e.element.attr('data-key')+'/edit'
+            //     //         //     }
+            //     //         // }).appendTo(cellElement);
+            //     //     }
+            //     // },
+            //     // {{--@endrole--}}
+            // ],
+            // summary: {
+            //     groupItems: [
+            //         {
+            //             column: "total_price",
+            //             summaryType: "sum", // "count",
+            //             // displayFormat: "Total: {0}",
+            //             showInGroupFooter: true
+            //         }, 
+            //         {
+            //             column: "selling_price",
+            //             summaryType: "sum",
+            //             // displayFormat: "Total: {0}",
+            //             showInGroupFooter: true
+            //         },
+            //         // {
+            //         //     column: "Sales order date",
+            //         //     summaryType: "max",
+            //         //     name: "sales_order_date"
+            //         // }
+            //     ],
+            //     // sortByGroupSummaryInfo: [
+            //     //     { summaryItem: "sales_order_date" } 
+            //     // ],
+            //     // totalItems: [
+            //     //     {
+            //     //         column: "total_price",
+            //     //         summaryType: "sum" // "count"
+            //     //     }, 
+            //     //     {
+            //     //         column: "selling_price",
+            //     //         summaryType: "sum"
+            //     //     }
+            //     // ]
+            // },
+            // masterDetail: {
+            //     enabled: true,
+            //     template: function(container, options) { 
+            //         console.log(options);
+            //         var currentSalesOrderData = options.data;
+
+            //         $("<div>")
+            //             .addClass("master-detail-caption")
+            //             // .text(currentSalesOrderData.code + " List:")
+            //             .text("Order Details:")
+            //             .appendTo(container);
+
+            //         $("<div>")
+            //             .dxDataGrid({
+            //                 columnAutoWidth: true,
+            //                 showBorders: true,
+            //                 columns: [
+            //                     {
+            //                         caption: "#",
+            //                         allowEditing: false,
+            //                         allowSorting: false,
+            //                         cellTemplate: function (cellElement, cellInfo) {
+            //                             cellElement.html('<span>'+(parseInt(cellInfo.rowIndex, 10)+1)+'</span>');
+            //                             // cellElement.html('<img width="70" src="'+cellInfo.data.image+'">');
+            //                         }
+            //                     },
+            //                     // 'category',
+            //                     // 'product',
+            //                     {
+            //                         dataField: "product",
+            //                         sortOrder: "asc"
+            //                     },
+            //                     'sku',
+            //                     'kemasan',
+            //                     // 'satuan',
+            //                     'quantity',
+            //                     // 'normal_price',
+            //                     // {
+            //                     //     dataField: "normal_price",
+            //                     //     caption: "Product normal price",
+            //                     //     // format: {  
+            //                     //     //     type: "fixedPoint",  
+            //                     //     //     precision: 0  
+            //                     //     // }
+            //                     //     format: '#,##0.##'
+            //                     // },
+            //                     // 'unit_price_mb',
+            //                     {{--@if(!Auth::user()->mitra_bisnis_id)--}}
+            //                     {
+            //                         dataField: "unit_price_mb",
+            //                         caption: "Base Price",
+            //                         format: '#,##0.##'
+            //                     },
+            //                     {
+            //                         // dataField: "total_price",
+            //                         caption: "Subtotal Base Price",
+            //                         // width: 100,
+            //                         alignment: 'right',
+            //                         allowEditing: false,
+            //                         allowSorting: true,
+            //                         format: '#,##0.##',
+            //                         cellTemplate: function (cellElement, cellInfo) {
+            //                             // // var uPrice = cellInfo.data.unit_price;
+            //                             // // var uPrice = parseInt(cellInfo.data.product_price_mb) ? parseInt(cellInfo.data.product_price_mb) : 0;
+            //                             // var uPrice = parseInt(cellInfo.data.unit_price_mb) ? parseInt(cellInfo.data.unit_price_mb) : 0;                    
+            //                             // var tax = parseInt(cellInfo.data.tax_amount) ? parseInt(cellInfo.data.tax_amount) : 0;
+            //                             // var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //                             // var h = (parseInt(cellInfo.data.quantity) ? parseInt(cellInfo.data.quantity) : 0)*uPriceTaxed;
+
+            //                             // $('<span/>').addClass('')
+            //                             //     .text(h != 0 ? h : null)
+            //                             //     .appendTo(cellElement);
+
+            //                             var uPrice = parseInt(cellInfo.data.unit_price_mb) ? parseInt(cellInfo.data.unit_price_mb) : 0;                    
+            //                             // var tax = parseInt(cellInfo.data.tax_amount) ? parseInt(cellInfo.data.tax_amount) : 0;
+            //                             // var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //                             // var h = uPriceTaxed+cellInfo.data.margin_up_item;
+            //                             var h = (parseInt(cellInfo.data.quantity) ? parseInt(cellInfo.data.quantity) : 0)*uPrice;
+
+            //                             $('<span/>').addClass('')
+            //                                 .text(h != 0 ? h : null)
+            //                                 .appendTo(cellElement);
+            //                         }
+            //                     },
+            //                     {{--@endif--}}
+            //                     // 'tax_amount',
+            //                     {
+            //                         dataField: "tax_amount",
+            //                         caption: "PPN (%)"
+            //                     },
+            //                     // 'total_price',
+            //                     // {
+            //                     //     dataField: "total_price",
+            //                     //     caption: "Product Unit Price",
+            //                     //     format: '#,##0.##'
+            //                     // },
+            //                     // 'selling_price',
+            //                     {
+            //                         dataField: "selling_price",
+            //                         caption: "Deal Price",
+            //                         format: '#,##0.##'
+            //                     },
+            //                     {
+            //                         dataField: "total_price",
+            //                         caption: "Subtotal Deal Price",
+            //                         format: '#,##0.##',
+            //                         cellTemplate: function (cellElement, cellInfo) {
+            //                             cellElement.html(cellInfo.data.quantity*cellInfo.data.selling_price);
+            //                         }
+            //                         // calculateCellValue: function(data) {                        
+            //                         //     if(this.defaultCalculateCellValue(data)) {
+            //                         //         return (int)this.defaultCalculateCellValue(data).total_price + (int)this.defaultCalculateCellValue(data).margin_up_item;
+            //                         //     }
+            //                         // }
+            //                     },
+            //                     // 'discount_amount',
+            //                     {
+            //                         dataField: "discount_amount",
+            //                         caption: "Discount",
+            //                         format: '#,##0.##'
+            //                     },
+            //                     // 'margin_up_item'
+            //                     {
+            //                         dataField: "margin_up_item",
+            //                         caption: "Margin",
+            //                         format: '#,##0.##'
+            //                     },
+            //                     // "unit_note",
+            //                     {
+            //                         dataField: "unit_note",
+            //                         caption: "Remarks"
+            //                     },
+            //                 ],
+            //                 summary: {
+            //                     totalItems: [
+            //                         {
+            //                             column: "unit_price_mb",                    
+            //                             format: '#,##0.##',
+            //                             summaryType: "sum"
+            //                         },
+            //                         {
+            //                             name: "totalPriceMB",
+            //                             // column: "total_price",
+            //                             showInColumn: "Subtotal Price MB",                
+            //                             format: '#,##0.##',
+            //                             displayFormat: "Sum: {0}", 
+            //                             summaryType: "custom" // "count"
+            //                         },
+            //                         {
+            //                             column: "selling_price",
+            //                             summaryType: "sum",
+            //                             // displayFormat: "Total: {0}",
+            //                             showInGroupFooter: true
+            //                         },
+            //                         // {
+            //                         //     column: "total_price",
+            //                         //     summaryType: "sum", // "count",
+            //                         //     // displayFormat: "Total: {0}",
+            //                         //     showInGroupFooter: true
+            //                         // }, 
+            //                         // {
+            //                         //     column: "Sales order date",
+            //                         //     summaryType: "max",
+            //                         //     name: "sales_order_date"
+            //                         // }
+            //                         {
+            //                             name: "totalPrice",
+            //                             // column: "total_price",
+            //                             showInColumn: "total_price", 
+            //                             displayFormat: "Sum: {0}",                    
+            //                             format: '#,##0.##',
+            //                             summaryType: "custom" // "count"
+            //                         }
+            //                     ],  
+            //                     calculateCustomSummary: function (options) {  
+            //                         if(options.name === "totalPriceMB") {  
+            //                             if (options.summaryProcess === "start") {  
+            //                                 options.totalValue = 0;
+            //                             }  
+            //                             if (options.summaryProcess === "calculate") { 
+            //                                 options.totalValue += (parseInt(options.value.quantity) ? parseInt(options.value.quantity) : 0) * parseInt(options.value.unit_price_mb);
+            //                             }  
+            //                             if (options.summaryProcess === "finalize") {  
+            //                                 options.totalValue = parseInt(options.totalValue) ? options.totalValue : 0;
+            //                             }  
+            //                         }  
+            //                         if(options.name === "totalPrice") {  
+            //                             if (options.summaryProcess === "start") {  
+            //                                 options.totalValue = 0;
+            //                             }  
+            //                             if (options.summaryProcess === "calculate") { 
+            //                                 // // var uPrice = parseInt(options.value.product_price_mb) ? parseInt(options.value.product_price_mb) : 0;
+            //                                 // var uPrice = parseInt(options.value.unit_price_mb) ? parseInt(options.value.unit_price_mb) : 0;
+            //                                 // var tax = parseInt(options.value.tax_amount) ? parseInt(options.value.tax_amount) : 0;
+            //                                 // var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //                                 // // options.totalValue += ((parseInt(options.value.quantity) ? parseInt(options.value.quantity) : 0) * uPriceTaxed);                    
+            //                                 // options.totalValue += uPriceTaxed;   
+
+            //                                 var uPrice = parseInt(options.value.selling_price) ? parseInt(options.value.selling_price) : 0;
+            //                                 var tax = parseInt(options.value.tax_amount) ? parseInt(options.value.tax_amount) : 0;
+            //                                 var uPriceTaxed = tax ? uPrice+(tax*uPrice/100) : uPrice;
+
+            //                                 options.totalValue += (parseInt(options.value.quantity) ? parseInt(options.value.quantity) : 0) * uPriceTaxed;
+            //                             }  
+            //                             if (options.summaryProcess === "finalize") {  
+            //                                 options.totalValue = parseInt(options.totalValue) ? options.totalValue : 0;
+            //                             }  
+            //                         } 
+            //                     }
+            //                 },
+            //                 dataSource: new DevExpress.data.DataSource({
+            //                     store: new DevExpress.data.ArrayStore({
+            //                         key: "id",
+            //                         data: {{--@json($salesOrderDetails)--}}
+            //                     }),
+            //                     filter: ["sales_header_id", "=", options.key]
+            //                 })
+            //             }).appendTo(container);
+            //     }
+            // },
+            // editing: {
+            //     mode: "row",
+            //     // allowUpdating: true,
+            //     allowDeleting: function(e) {
+            //         return true;
+            //         // {{--@role('superadministrator|administrator|maker')
+            //         //     if(e.row.data.checked_at) {
+            //         //         return true;
+            //         //     }                        
+            //         //     return false;
+            //         // @endrole
+            //         // @role(['checker'])
+            //         //     return false;
+            //         // @endrole--}}
+            //     },
+            //     // allowAdding: true
+            // },
+            // editing: {
+            //     mode: "cell",
+            //     allowUpdating: true,
+            //     selectTextOnEditStart: true,
+            //     // startEditAction: "click", // 'dblClick'
+            // },
+            // editing: {
+            //     mode: "popup",
+            //     allowUpdating: true,
+            //     popup: {
+            //         title: "Employee Info",
+            //         showTitle: true,
+            //         width: 700,
+            //         height: 345,
+            //         position: {
+            //             my: "top",
+            //             at: "top",
+            //             of: window
+            //         }
+            //     }
+            // },
+            // onCellPrepared: function (e) {
+            //     // if (e.rowType === "data" && e.column.command === "edit") {
+            //     //     // {{--if(!e.row.data.checked_at) {
+            //     //     //     @role('administrator|maker')
+            //     //     //     e.cellElement.prepend('&nbsp;');
+            //     //     //     $('<a/>').addClass('dx-link text-info')
+            //     //     //             .text('Checking...')
+            //     //     //             .on('dxclick', function () {
+            //     //     //                 window.location = '{{url("mitraBisnis")}}/'+e.row.data.id
+            //     //     //             })
+            //     //     //             .prependTo(e.cellElement);
+            //     //     //     // $('<a>')
+            //     //     //     //     .text("Test")
+            //     //     //     //     .attr({ onclick: "alert('" + e.row.data.firstName + "');", "class": "dx-link" })
+            //     //     //     //     .appendTo(e.cellElement);
+            //     //     //     @endrole
+            //     //     //     @role('superadministrator|checker')
+            //     //     //     e.cellElement.prepend('&nbsp;');
+            //     //     //     $('<a/>').addClass('dx-link text-danger')
+            //     //     //         .text('Reject')
+            //     //     //         .on('dxclick', function () {
+            //     //     //             window.location = '{{url("mitraBisnis")}}/'+e.row.data.id+'/reject'
+            //     //     //         })
+            //     //     //         .prependTo(e.cellElement);
+            //     //     //     e.cellElement.prepend('&nbsp;');
+            //     //     //     $('<a/>').addClass('dx-link text-success')
+            //     //     //         .text('Approve')
+            //     //     //         .on('dxclick', function () {
+            //     //     //             window.location = '{{url("mitraBisnis")}}/'+e.row.data.id+'/approve'
+            //     //     //         })
+            //     //     //         .prependTo(e.cellElement);
+            //     //     //     e.cellElement.prepend('&nbsp;');
+            //     //     //     $('<a/>').addClass('dx-link text-info')
+            //     //     //         .text('View')
+            //     //     //         .on('dxclick', function () {
+            //     //     //             window.location = '{{url("mitraBisnis")}}/'+e.row.data.id
+            //     //     //         })
+            //     //     //         .prependTo(e.cellElement);
+            //     //     //     @endrole
+            //     //     // } else {--}}
+            //     //         // {{--@role('superadministrator|administrator|maker')--}]
+            //     //         // e.cellElement.prepend('&nbsp;');
+            //     //         // $('<a/>').addClass('dx-link')
+            //     //         //     .text('Edit')
+            //     //         //     .on('dxclick', function () {
+            //     //         //         window.location = '{{url("mitraBisnis")}}/'+e.row.data.id+'/edit'
+            //     //         //     })
+            //     //         //     .prependTo(e.cellElement);
+            //     //         // {{--@endrole--}}
+            //     //         // {{--@role('checker')--}}
+            //     //         e.cellElement.prepend('&nbsp;');
+            //     //         $('<a/>').addClass('dx-link')
+            //     //             .text('Edit')
+            //     //             .on('dxclick', function () {
+            //     //                 window.location = '{{url("mitraBisnis")}}/'+e.row.data.id+'/edit'
+            //     //             })
+            //     //             .prependTo(e.cellElement);
+            //     //         e.cellElement.prepend('&nbsp;');
+            //     //         e.cellElement.prepend('&nbsp;');
+            //     //         e.cellElement.prepend('&nbsp;');
+            //     //         $('<a/>').addClass('dx-link btn btn-warning btn-sm btn-text-white')
+            //     //             .text('Create Sales Order')
+            //     //             .on('dxclick', function () {
+            //     //                 window.location = '{{url("quotationHeaders")}}?mb='+e.row.data.id
+            //     //             })
+            //     //             .prependTo(e.cellElement);
+            //     //         // {{--@endrole--}}
+            //     //     // {{--}--}}
+            //     }
+            //     // {{--@role('superadministrator|checker')
+            //     //     if (e.rowType === "data" & e.column.command === 'select' && e.data.checked != null) {
+            //     //         e.cellElement.find('.dx-select-checkbox').dxCheckBox("instance").option("disabled", true);
+            //     //         e.cellElement.off();
+            //     //     }
+            //     // @endrole--}}
+            // },
+            // onCellPrepared: function(e){
+            //     if(e.rowType === "data" && e.columnIndex === 0) {
+            //         orderList[e.key] = e.data;
+            //         $('#products').val(JSON.stringify(orderList));
+            //         logEvent("RowDuplicate");
+            //     }
+            // },
+            // onRowUpdating: function(e) {
+            //     orderList[e.key] = $.extend(e.oldData, e.newData);
+            //     // console.log(orderList);
+            //     $('#products').val(JSON.stringify(orderList));
+            //     logEvent("RowUpdated");
+            // },
+            // onEditingStart: function(e, t) {
+            //     if (e.column.dataField === "selling_price") {
+            //         if(e.data.selling_price && !newProduct[e.key]) {
+            //             e.cancel = true;
+            //         } else {
+            //             newProduct[e.key] = e.data;
+            //             e.component.cellValue(e.component.getRowIndexByKey(e.key), "selling_price", e.data.unit_price_mb * ((100+{{$settings->where('key', 'recommended_price')->first()->value}})/100));
+            //         }
+            //     } 
+            // },
+            // onContentReady: function(e){
+            //     // {{--var selectAll = e.element.find(".dx-header-row").find(".dx-select-checkbox");
+            //     // selectAll.dxCheckBox("instance").option("onValueChanged", null);
+            //     // selectAll.click(function(x) {     
+            //     //     x.preventDefault();
+            //     //     x.stopPropagation();
+                    
+            //     //     if (doDeselection)    {
+            //     //         e.component.deselectAll();
+            //     //         doDeselection = false;
+            //     //     }
+            //     //     else {
+            //     //         var filtered = @json($mitraBisnis).filter(function(s) {
+            //     //             return s.checked == null;
+            //     //         });
+            //     //         var id = [];
+            //     //         $.each (filtered, function (i, item){
+            //     //             id.push(item.id);
+            //     //         })
+                                                
+            //     //         e.component.selectRows(id);
+            //     //         doDeselection = true;
+            //     //     }
+            //     // });--}}
+            //     {{--var checkBox = $('.dx-header-row .dx-checkbox').first();
+            //     checkBox.off('dxclick.MyNamespace');
+            //     checkBox.on('dxclick.MyNamespace', function(x) {
+            //         // alert(checkBox.dxCheckBox('instance').option('value'));
+            //         x.preventDefault();
+            //         x.stopPropagation();
+                    
+            //         if (doDeselection)    {
+            //             e.component.deselectAll();
+            //             doDeselection = false;
+            //         }
+            //         else {
+            //             var filtered = @json($mitraBisnis).filter(function(s) {
+            //                 return s.checked == null;
+            //             });
+            //             var id = [];
+            //             $.each (filtered, function (i, item){
+            //                 id.push(item.id);
+            //             })
+                                                
+            //             e.component.selectRows(id);
+            //             doDeselection = true;
+            //         }
+            //     });
+            //     var cek = @json($mitraBisnis).filter(function(s) {
+            //         return s.checked == null;
+            //     });
+            //     if(cek.length != 0){
+            //         $('.btn-select').show();
+            //     }--}}
+            // },
+            // onSelectionChanged: function(e) {
+            //     // $('.btn-select').toggle();
+            //     var selectedRows = e.selectedRowKeys;
+            //     $('.idVal').val(selectedRows);
+            //     console.log(selectedRows);
+            // },
+            // onRowClick: function(e) {
+            //     {{--@role('superadministrator|administrator|maker'])
+            //     if(e.data.checked_at) {
+            //         window.location = '{{ url()->current() }}/'+e.data.id+'/edit'
+            //     }
+            //     @endrole--}}
+            // },
+            // onEditingStart: function(e) {
+            //     logEvent("EditingStart");
+            // },
+            // onInitNewRow: function(e) {
+            //     logEvent("InitNewRow");
+            // },
+            // onRowInserting: function(e) {
+            //     logEvent("RowInserting");
+            // },
+            // onRowUpdated: function(e) {
+            //     logEvent("RowUpdated");
+            // },
+        });
+        
+        // function OnClick() {
+        //     var arrId = $("#gridContainer").dxDataGrid("instance").getSelectedRowKeys();
+        //     console.log('id', arrId);
+        // }
+    </script>
+@endsection

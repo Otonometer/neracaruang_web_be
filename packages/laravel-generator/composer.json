@@ -1,0 +1,39 @@
+{
+    "name": "dandisy/laravel-generator",
+    "description": "Webcore Laravel Generator",
+    "keywords": [
+        "webcore",
+        "laravel",
+        "api",
+        "crud",
+        "generator",
+        "swagger"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dandi Setiyawan",
+            "email": "dandi@redbuzz.co.id"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Webcore\\Generator\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "\\Webcore\\Generator\\WebcoreGeneratorServiceProvider"
+            ]
+        }
+    }
+}

@@ -1,0 +1,6 @@
+<!-- $FIELD_NAME_TITLE$ Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('$FIELD_NAME$', '$FIELD_NAME_TITLE$:') !!}
+    {!! Form::file('$FIELD_NAME$', ['class' => 'dropify','id' => 'input-file-now', 'data-default-file' => @$$MODEL_NAME_CAMEL$->$FIELD_NAME$ ? asset('storage/'.$$MODEL_NAME_CAMEL$->$FIELD_NAME$) : '', 'data-allowed-file-extensions' => 'jpg jpeg png', 'data-max-file-size' => '1M']) !!}
+</div>
+<div class="clearfix"></div>
