@@ -6,9 +6,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\EBookController;
 use App\Http\Controllers\Api\ContentController;
+use App\Http\Controllers\Api\EBookApiController;
 use App\Http\Controllers\Api\SocialMediaController;
 use App\Http\Controllers\Api\DiscussionApiController;
-use App\Http\Controllers\Api\EBookApiController;
+use App\Http\Controllers\Api\NotificationApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,3 +100,6 @@ Route::get('/tags',function ()
 Route::get('social-medias', [SocialMediaController::class,'getSocialMedia']);
 
 Route::get('ebooks', [EBookApiController::class, 'getEbooks']);
+Route::get('/ebooks/{slug}/download', [EBookApiController::class, 'downloadEbook'])->middleware('auth:sanctum');
+
+Route::get('notifications', [NotificationApiController::class, 'getNotifications']);

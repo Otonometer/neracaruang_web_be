@@ -46,4 +46,23 @@ class EBookApiController extends Controller
             return $this->sendError('Failed to get data.',500);
         }
     }
+
+    public function downloadEbook($slug){
+        try {
+            $ebook = $this->ebookRepository->where('slug', $slug)->where('is_active', 1)->first();
+
+            if (!$ebook) {
+                return $this->sendError('Ebook not found.', 404);
+            }
+
+            $ebook->increment('download_count');
+            if(!file_exists(public_path('storage/ebooks/'.$ebook->file))){
+                return $this->sendError('Ebook file not found.', 404);
+            }
+
+            return response()->download(public_path('storage/ebooks/'.$ebook->file));
+        } catch (\Throwable $th) {
+            return $this->sendError('Failed to download ebook.',500);
+        }
+    }
 }
